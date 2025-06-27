@@ -1,0 +1,52 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+processors:
+  batch:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 75
+    spike_limit_percentage: 15
+
+exporters:
+  # This is our custom exporter for Data Prepper
+  otlp/dp:
+    endpoint: "data-prepper:21890"
+    tls:
+      insecure: true
+
+  # RENAMED from "logging" to "debug"
+  debug:
+    verbosity: detailed
+
+  otlphttp:
+    endpoint: http://jaeger:4318
+    tls:
+      insecure: true
+
+  prometheus:
+    endpoint: 0.0.0.0:9464
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      # RENAMED "logging" to "debug" in this list
+      exporters: [debug, otlphttp, otlp/dp]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      # RENAMED "logging" to "debug" in this list
+      exporters: [debug, prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      # RENAMED "logging" to "debug" in this list
+      exporters: [debug]
+  telemetry:
+    logs:
+      level: "debug"

@@ -1,0 +1,17 @@
+version: "2"
+trace-ingestion-pipeline:
+  source:
+    otel_trace_source:
+      port: 21890
+      ssl: false
+  processor:
+    - otel_traces:
+  sink:
+    - opensearch:
+        hosts: [ "https://localhost:9200" ]
+        username: "admin"
+        password: "2Jkowall!@"
+        insecure: true
+        # FIX: Add the required index configuration with the standard trace alias.
+        index:
+          indexAlias: otel-v1-apm-span
