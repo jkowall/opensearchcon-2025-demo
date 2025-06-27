@@ -1,0 +1,48 @@
+# This is a docker-compose file for a simple OpenSearch demo.
+version: '3'
+services:
+  # 1. The OpenSearch engine node
+  opensearch-node:
+    image: opensearchproject/opensearch:3.0.0
+    container_name: opensearch-node
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=2Jkowall!@ # Change this!
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - 9200:9200
+      - 9600:9600
+    networks:
+      - opensearch-net
+
+  # 2. The OpenSearch Dashboards web interface
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:3.0.0
+    container_name: opensearch-dashboards
+    ports:
+      - 5601:5601
+    environment:
+      OPENSEARCH_HOSTS: '["https://opensearch-node:9200"]'
+    networks:
+      - opensearch-net
+    depends_on:
+      - opensearch-node
+
+  # 3. The Data Prepper service (NEWLY ADDED)
+  data-prepper:
+    image: opensearchproject/data-prepper
+    container_name: data-prepper
+    ports:
+      - "2021:2021" # Expose the HTTP source port to your host machine
+    volumes:
+      # Mount the pipeline configuration file into the container
+      - ./data-prepper-config/pipeline.yaml:/usr/share/data-prepper/pipelines/pipeline.yaml
+    networks:
+      - opensearch-net
+    depends_on:
+      - opensearch-node
+
+# Defines the network that allows containers to communicate
+networks:
+  opensearch-net:
+    driver: bridge
